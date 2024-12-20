@@ -1,0 +1,1169 @@
+# Propuesta de objetivos
+
+# Importación de datos
+library(readr)
+all_seasons <- read_csv("all_seasons.csv")
+summary(all_seasons)
+table(all_seasons$season)
+data12_13<-data.frame(subset(all_seasons,season=="2012-13"))
+dim(data12_13)
+str(data12_13)
+
+#Análisis Exploratorio Multivariado:
+
+par(mfrow=c(3,1))
+data12_13[,c(2:4,10:19)]
+hist(data12_13$age,main="Distribution of players by age",xlab="Age")
+hist(data12_13$player_height,main="Distribution of players by height",xlab="Height")
+hist(data12_13$player_weight,main="Distribution of players by weight",xlab="Weight")
+
+hist(data12_13$gp,main="Distribution of players according to games played",xlab="GP")
+hist(data12_13$pts,main="Distribution of players according to points obtained",xlab="Pts")
+hist(data12_13$reb,main="Distribution of players by rebounds",xlab="Reb.")
+
+hist(data12_13$ast,main="Distribution of players by to Asisstent",xlab="Ast")
+hist(data12_13$oreb_pct,main="Distribution of players by  % reb of.",xlab="% Reb Of")
+hist(data12_13$dreb_pct,main="Distribution of players by % reb def",xlab="% Reb Def")
+
+hist(data12_13$usg_pct,main="Distribution of players by % dream player",xlab="% dream player")
+hist(data12_13$ts_pct,main="Distribution of players by shooting efficiency",xlab="shooting efficiency")
+hist(data12_13$ast_pct,main="Distribution of players by % passes",xlab="% Passes")
+par(mfrow=c(1,2))
+barplot(sort(table(data12_13$college),TRUE)[1:4],horiz=TRUE)
+barplot(sort(table(data12_13$team_abbreviation),TRUE)[1:4],horiz=TRUE)
+
+# Variables relacionadas a edad, peso y talla:
+names(data12_13[,c(2:4,10:19)])
+library(FactoMineR)
+res.con_age = condes(data12_13[,c(2,10:19)],1)
+res.con_age$quanti
+
+res.con_height = condes(data12_13[,c(3,10:19)],1)
+res.con_height$quanti
+
+res.con_weight = condes(data12_13[,c(4,10:19)],1)
+res.con_weight$quanti
+
+
+# Analizar patrones generales en el rendimiento de jugadores en relación con edad y número de partidos jugados.
+
+#Valores Atípicos Multivariados: 
+
+# Identificar jugadores excepcionales en rendimiento con base en múltiples variables (puntos, rebotes, asistencias, ts_pct).
+
+# Valores atipicos
+names(data12_13)
+library(chemometrics)
+res.out <- Moutlier(data12_13[,c(2:4,10:19)],
+                    quantile = 0.995, col = "green")
+
+res.out
+id_atip<-which(res.out$md > res.out$cutoff)
+length(which(res.out$md > res.out$cutoff))
+length(which(res.out$md > res.out$cutoff))/469 
+
+id_atip<-which(res.out$md > res.out$cutoff)
+data12_13$cond<-0
+data12_13$cond[id_atip]<-1
+boxplot(pts~cond,data12_13)
+boxplot(gp~cond,data12_13)
+boxplot(player_weight~cond,data12_13)
+library(tidyverse)
+data12_13 %>% 
+  group_by(cond) %>% 
+  summarise(max1<-max(gp),
+            max2<-max(pts),
+            max3<-max(reb),
+            max4<-max(ast),
+            max3<-max(oreb_pct),
+            max3<-max(dreb_pct)) %>% 
+  t() %>% 
+  as.data.frame()
+
+summary(data12_13[id_atip,])
+par(mfrow=c(1,1))
+plot( res.out$md, res.out$rd )
+abline(h=res.out$cutoff, col="red")
+abline(v=res.out$cutoff, col="red")
+
+
+
+
+
+
+
+#Hotelling's T2: 
+# Comparar las métricas de rendimiento (pts, reb, ast) 
+# entre las dos universidades con mayor cantidad de jugadores destacados.
+
+sort(table(data12_13$college),TRUE)[1:3]
+college_more_players<-subset(data12_13,college=="Kentucky"|college=="Duke")
+college_more_players
+
+
+# gp
+ks.test(college_more_players$gp[college_more_players$college=="Kentucky"],
+        "pnorm",
+        mean(college_more_players$gp[college_more_players$college=="Kentucky"]),
+        sd(college_more_players$gp[college_more_players$college=="Kentucky"]))
+
+ks.test(college_more_players$gp[college_more_players$college=="Duke"],
+        "pnorm",
+        mean(college_more_players$gp[college_more_players$college=="Duke"]),
+        sd(college_more_players$gp[college_more_players$college=="Duke"]))
+
+
+# points
+ks.test(college_more_players$pts[college_more_players$college=="Kentucky"],
+        "pnorm",
+        mean(college_more_players$pts[college_more_players$college=="Kentucky"]),
+        sd(college_more_players$pts[college_more_players$college=="Kentucky"]))
+
+ks.test(college_more_players$pts[college_more_players$college=="Duke"],
+        "pnorm",
+        mean(college_more_players$pts[college_more_players$college=="Duke"]),
+        sd(college_more_players$pts[college_more_players$college=="Duke"]))
+# reb
+ks.test(college_more_players$reb[college_more_players$college=="Kentucky"],
+        "pnorm",
+        mean(college_more_players$reb[college_more_players$college=="Kentucky"]),
+        sd(college_more_players$reb[college_more_players$college=="Kentucky"]))
+
+ks.test(college_more_players$reb[college_more_players$college=="Duke"],
+        "pnorm",
+        mean(college_more_players$reb[college_more_players$college=="Duke"]),
+        sd(college_more_players$reb[college_more_players$college=="Duke"]))
+
+# ast
+ks.test(college_more_players$ast[college_more_players$college=="Kentucky"],
+        "pnorm",
+        mean(college_more_players$ast[college_more_players$college=="Kentucky"]),
+        sd(college_more_players$ast[college_more_players$college=="Kentucky"]))
+
+ks.test(college_more_players$ast[college_more_players$college=="Duke"],
+        "pnorm",
+        mean(college_more_players$ast[college_more_players$college=="Duke"]),
+        sd(college_more_players$ast[college_more_players$college=="Duke"]))
+
+
+# oreb_pct
+
+ks.test(college_more_players$oreb_pct[college_more_players$college=="Kentucky"],
+        "pnorm",
+        mean(college_more_players$oreb_pct[college_more_players$college=="Kentucky"]),
+        sd(college_more_players$oreb_pct[college_more_players$college=="Kentucky"]))
+
+ks.test(college_more_players$oreb_pct[college_more_players$college=="Duke"],
+        "pnorm",
+        mean(college_more_players$oreb_pct[college_more_players$college=="Duke"]),
+        sd(college_more_players$oreb_pct[college_more_players$college=="Duke"]))
+
+# dreb_pct
+
+ks.test(college_more_players$dreb_pct[college_more_players$college=="Kentucky"],
+        "pnorm",
+        mean(college_more_players$dreb_pct[college_more_players$college=="Kentucky"]),
+        sd(college_more_players$dreb_pct[college_more_players$college=="Kentucky"]))
+
+ks.test(college_more_players$dreb_pct[college_more_players$college=="Duke"],
+        "pnorm",
+        mean(college_more_players$dreb_pct[college_more_players$college=="Duke"]),
+        sd(college_more_players$dreb_pct[college_more_players$college=="Duke"]))
+
+
+# ts_pct
+ks.test(college_more_players$ts_pct[college_more_players$college=="Kentucky"],
+        "pnorm",
+        mean(college_more_players$ts_pct[college_more_players$college=="Kentucky"]),
+        sd(college_more_players$ts_pct[college_more_players$college=="Kentucky"]))
+
+ks.test(college_more_players$ts_pct[college_more_players$college=="Duke"],
+        "pnorm",
+        mean(college_more_players$ts_pct[college_more_players$college=="Duke"]),
+        sd(college_more_players$ts_pct[college_more_players$college=="Duke"]))
+
+
+# ast_pct
+
+ks.test(college_more_players$ast_pct[college_more_players$college=="Kentucky"],
+        "pnorm",
+        mean(college_more_players$ast_pct[college_more_players$college=="Kentucky"]),
+        sd(college_more_players$ast_pct[college_more_players$college=="Kentucky"]))
+
+ks.test(college_more_players$ast_pct[college_more_players$college=="Duke"],
+        "pnorm",
+        mean(college_more_players$ast_pct[college_more_players$college=="Duke"]),
+        sd(college_more_players$ast_pct[college_more_players$college=="Duke"]))
+
+
+HotellingsT2Test(cbind(gp,pts,reb,ast,oreb_pct,dreb_pct,ts_pct,ast_pct)~college,data=college_more_players) 
+HotellingsT2Test(cbind(pts,reb,ast,oreb_pct,dreb_pct,ts_pct,ast_pct)~college,data=college_more_players) 
+
+library(tidyverse)
+resultados <- college_more_players %>%
+  group_by(college) %>% 
+  summarise(across(c(pts,reb,ast,oreb_pct,dreb_pct,ts_pct,ast_pct), list(
+    media = mean,
+    varianza = var
+  ))) %>% 
+  data.frame()
+
+resultados
+
+#MANOVA: Determinar si las métricas de rendimiento (puntos, rebotes, asistencias, calificación neta) varían significativamente entre los 4 equipos con mayor cantidad de jugadores destacados.
+
+sort(table(data12_13$team_abbreviation),TRUE)[1:4]
+team_more_player<-subset(data12_13,team_abbreviation=="DAL"|
+                           team_abbreviation=="CHA"|
+                           team_abbreviation=="MIN"|
+                           team_abbreviation=="NYK",)
+team_more_player
+
+
+# gp
+ks.test(team_more_player$gp[team_more_player$team_abbreviation=="DAL"],
+        "pnorm",
+        mean(team_more_player$gp[team_more_player$team_abbreviation=="DAL"]),
+        sd(team_more_player$gp[team_more_player$team_abbreviation=="DAL"]))
+
+ks.test(team_more_player$gp[team_more_player$team_abbreviation=="CHA"],
+        "pnorm",
+        mean(team_more_player$gp[team_more_player$team_abbreviation=="CHA"]),
+        sd(team_more_player$gp[team_more_player$team_abbreviation=="CHA"]))
+
+ks.test(team_more_player$gp[team_more_player$team_abbreviation=="MIN"],
+        "pnorm",
+        mean(team_more_player$gp[team_more_player$team_abbreviation=="MIN"]),
+        sd(team_more_player$gp[team_more_player$team_abbreviation=="MIN"]))
+
+ks.test(team_more_player$gp[team_more_player$team_abbreviation=="NYK"],
+        "pnorm",
+        mean(team_more_player$gp[team_more_player$team_abbreviation=="NYK"]),
+        sd(team_more_player$gp[team_more_player$team_abbreviation=="NYK"]))
+
+# points
+ks.test(team_more_player$pts[team_more_player$team_abbreviation=="DAL"],
+        "pnorm",
+        mean(team_more_player$pts[team_more_player$team_abbreviation=="DAL"]),
+        sd(team_more_player$pts[team_more_player$team_abbreviation=="DAL"]))
+
+ks.test(team_more_player$pts[team_more_player$team_abbreviation=="CHA"],
+        "pnorm",
+        mean(team_more_player$pts[team_more_player$team_abbreviation=="CHA"]),
+        sd(team_more_player$pts[team_more_player$team_abbreviation=="CHA"]))
+
+ks.test(team_more_player$pts[team_more_player$team_abbreviation=="MIN"],
+        "pnorm",
+        mean(team_more_player$pts[team_more_player$team_abbreviation=="MIN"]),
+        sd(team_more_player$pts[team_more_player$team_abbreviation=="MIN"]))
+
+ks.test(team_more_player$pts[team_more_player$team_abbreviation=="NYK"],
+        "pnorm",
+        mean(team_more_player$pts[team_more_player$team_abbreviation=="NYK"]),
+        sd(team_more_player$pts[team_more_player$team_abbreviation=="NYK"]))
+
+# reb
+ks.test(team_more_player$reb[team_more_player$team_abbreviation=="DAL"],
+        "pnorm",
+        mean(team_more_player$reb[team_more_player$team_abbreviation=="DAL"]),
+        sd(team_more_player$reb[team_more_player$team_abbreviation=="DAL"]))
+
+ks.test(team_more_player$reb[team_more_player$team_abbreviation=="CHA"],
+        "pnorm",
+        mean(team_more_player$reb[team_more_player$team_abbreviation=="CHA"]),
+        sd(team_more_player$reb[team_more_player$team_abbreviation=="CHA"]))
+
+ks.test(team_more_player$reb[team_more_player$team_abbreviation=="MIN"],
+        "pnorm",
+        mean(team_more_player$reb[team_more_player$team_abbreviation=="MIN"]),
+        sd(team_more_player$reb[team_more_player$team_abbreviation=="MIN"]))
+
+ks.test(team_more_player$reb[team_more_player$team_abbreviation=="NYK"],
+        "pnorm",
+        mean(team_more_player$reb[team_more_player$team_abbreviation=="NYK"]),
+        sd(team_more_player$reb[team_more_player$team_abbreviation=="NYK"]))
+# ast
+ks.test(team_more_player$ast[team_more_player$team_abbreviation=="DAL"],
+        "pnorm",
+        mean(team_more_player$ast[team_more_player$team_abbreviation=="DAL"]),
+        sd(team_more_player$ast[team_more_player$team_abbreviation=="DAL"]))
+
+ks.test(team_more_player$ast[team_more_player$team_abbreviation=="CHA"],
+        "pnorm",
+        mean(team_more_player$ast[team_more_player$team_abbreviation=="CHA"]),
+        sd(team_more_player$ast[team_more_player$team_abbreviation=="CHA"]))
+
+ks.test(team_more_player$ast[team_more_player$team_abbreviation=="MIN"],
+        "pnorm",
+        mean(team_more_player$ast[team_more_player$team_abbreviation=="MIN"]),
+        sd(team_more_player$ast[team_more_player$team_abbreviation=="MIN"]))
+
+ks.test(team_more_player$ast[team_more_player$team_abbreviation=="NYK"],
+        "pnorm",
+        mean(team_more_player$ast[team_more_player$team_abbreviation=="NYK"]),
+        sd(team_more_player$ast[team_more_player$team_abbreviation=="NYK"]))
+
+# oreb_pct
+
+ks.test(team_more_player$oreb_pct[team_more_player$team_abbreviation=="DAL"],
+        "pnorm",
+        mean(team_more_player$oreb_pct[team_more_player$team_abbreviation=="DAL"]),
+        sd(team_more_player$oreb_pct[team_more_player$team_abbreviation=="DAL"]))
+
+ks.test(team_more_player$oreb_pct[team_more_player$team_abbreviation=="CHA"],
+        "pnorm",
+        mean(team_more_player$oreb_pct[team_more_player$team_abbreviation=="CHA"]),
+        sd(team_more_player$oreb_pct[team_more_player$team_abbreviation=="CHA"]))
+
+ks.test(team_more_player$oreb_pct[team_more_player$team_abbreviation=="MIN"],
+        "pnorm",
+        mean(team_more_player$oreb_pct[team_more_player$team_abbreviation=="MIN"]),
+        sd(team_more_player$oreb_pct[team_more_player$team_abbreviation=="MIN"]))
+
+ks.test(team_more_player$oreb_pct[team_more_player$team_abbreviation=="NYK"],
+        "pnorm",
+        mean(team_more_player$oreb_pct[team_more_player$team_abbreviation=="NYK"]),
+        sd(team_more_player$oreb_pct[team_more_player$team_abbreviation=="NYK"]))
+
+# dreb_pct
+
+ks.test(team_more_player$dreb_pct[team_more_player$team_abbreviation=="DAL"],
+        "pnorm",
+        mean(team_more_player$dreb_pct[team_more_player$team_abbreviation=="DAL"]),
+        sd(team_more_player$dreb_pct[team_more_player$team_abbreviation=="DAL"]))
+
+ks.test(team_more_player$dreb_pct[team_more_player$team_abbreviation=="CHA"],
+        "pnorm",
+        mean(team_more_player$dreb_pct[team_more_player$team_abbreviation=="CHA"]),
+        sd(team_more_player$dreb_pct[team_more_player$team_abbreviation=="CHA"]))
+
+ks.test(team_more_player$dreb_pct[team_more_player$team_abbreviation=="MIN"],
+        "pnorm",
+        mean(team_more_player$dreb_pct[team_more_player$team_abbreviation=="MIN"]),
+        sd(team_more_player$dreb_pct[team_more_player$team_abbreviation=="MIN"]))
+
+ks.test(team_more_player$dreb_pct[team_more_player$team_abbreviation=="NYK"],
+        "pnorm",
+        mean(team_more_player$dreb_pct[team_more_player$team_abbreviation=="NYK"]),
+        sd(team_more_player$dreb_pct[team_more_player$team_abbreviation=="NYK"]))
+
+# ts_pct
+ks.test(team_more_player$ts_pct[team_more_player$team_abbreviation=="DAL"],
+        "pnorm",
+        mean(team_more_player$ts_pct[team_more_player$team_abbreviation=="DAL"]),
+        sd(team_more_player$ts_pct[team_more_player$team_abbreviation=="DAL"]))
+
+ks.test(team_more_player$ts_pct[team_more_player$team_abbreviation=="CHA"],
+        "pnorm",
+        mean(team_more_player$ts_pct[team_more_player$team_abbreviation=="CHA"]),
+        sd(team_more_player$ts_pct[team_more_player$team_abbreviation=="CHA"]))
+
+ks.test(team_more_player$ts_pct[team_more_player$team_abbreviation=="MIN"],
+        "pnorm",
+        mean(team_more_player$ts_pct[team_more_player$team_abbreviation=="MIN"]),
+        sd(team_more_player$ts_pct[team_more_player$team_abbreviation=="MIN"]))
+
+ks.test(team_more_player$ts_pct[team_more_player$team_abbreviation=="NYK"],
+        "pnorm",
+        mean(team_more_player$ts_pct[team_more_player$team_abbreviation=="NYK"]),
+        sd(team_more_player$ts_pct[team_more_player$team_abbreviation=="NYK"]))
+
+# ast_pct
+
+ks.test(team_more_player$ast_pct[team_more_player$team_abbreviation=="DAL"],
+        "pnorm",
+        mean(team_more_player$ast_pct[team_more_player$team_abbreviation=="DAL"]),
+        sd(team_more_player$ast_pct[team_more_player$team_abbreviation=="DAL"]))
+
+ks.test(team_more_player$ast_pct[team_more_player$team_abbreviation=="CHA"],
+        "pnorm",
+        mean(team_more_player$ast_pct[team_more_player$team_abbreviation=="CHA"]),
+        sd(team_more_player$ast_pct[team_more_player$team_abbreviation=="CHA"]))
+
+ks.test(team_more_player$ast_pct[team_more_player$team_abbreviation=="MIN"],
+        "pnorm",
+        mean(team_more_player$ast_pct[team_more_player$team_abbreviation=="MIN"]),
+        sd(team_more_player$ast_pct[team_more_player$team_abbreviation=="MIN"]))
+
+ks.test(team_more_player$ast_pct[team_more_player$team_abbreviation=="NYK"],
+        "pnorm",
+        mean(team_more_player$ast_pct[team_more_player$team_abbreviation=="NYK"]),
+        sd(team_more_player$ast_pct[team_more_player$team_abbreviation=="NYK"]))
+
+pos_man<-manova(cbind(pts,reb,ast,oreb_pct,
+                      dreb_pct,ts_pct,ast_pct)~team_abbreviation,
+                data=team_more_player)
+summary.aov(pos_man)
+summary(pos_man)
+#  Clustering: 
+# Agrupar jugadores en clusters basados en similitudes en su rendimiento (puntos, rebotes, asistencias, ts_pct) y características físicas (altura, peso).
+
+
+## Cluster Jerárquico
+
+data_scale<-scale(data12_13[,c(4:6,12:21)])
+str(data_scale)
+data_scale<-as.data.frame(data_scale)
+d <- dist(data_scale, method = "euclidean") 
+
+fit3 <- hclust(d, method="ward.D2") 
+plot(fit3,main="Dendrogram of Ward Method") # Dendogram 
+library(FactoMineR)
+pca_result <- PCA(data12_13[,c(4:6,12:21)],
+                  quali.sup = c(1:3,7:11),ncp = 13,scale.unit = TRUE)
+res.hcpc <- HCPC(pca_result, graph = FALSE)
+table(res.hcpc$data.clust$clust)
+
+# Dendrogram using fviz_dend
+library(factoextra)
+fviz_dend(res.hcpc, rect = TRUE, rect_fill = TRUE)
+
+## 3D plot ##
+plot(res.hcpc, choice = "3D.map")
+
+# Visualization of Clusters
+fviz_cluster(res.hcpc, repel = TRUE, show.clust.cent = TRUE,main = "Factor map")
+# Visualización de los clusters
+fviz_cluster(res.hcpc, repel = TRUE, show.clust.cent = TRUE)
+
+# Extraer las asignaciones de cluster y los datos originales
+clusters <- as.numeric(res.hcpc$data.clust$clust)
+clusters
+data <- res.hcpc$data.clust[, -ncol(res.hcpc$data.clust)]  # Sin la columna de clusters
+head(data)
+library(cluster)
+library(factoextra)
+# index silhoutte
+dist_matrix <- dist(data12_13[,c(4:6,12:21)]) 
+sil <- silhouette(clusters, dist_matrix)
+fviz_silhouette(sil)
+
+
+## Kmeans
+
+aux<-c()
+for (i in 2:5){
+  k<-kmeans(data12_13[,c(4:6,12:21)],centers=i,nstart=25)
+  #aux[i-1]<-((k$betweenss/k$totss)*(nrow(usa)-i))/((k$tot.withinss/k$totss)*(i-1))
+  aux[i-1]<-((k$betweenss)*(nrow(data12_13[,c(4:6,12:21)])-i))/((k$tot.withinss)*(i-1))
+}
+plot(2:5,aux, xlab="Number of Clusters", ylab="Pseudo-F", type="l", main="Pseudo F Index")
+
+library(factoextra)
+clust_euc<-eclust(data12_13[,c(4:6,12:21)], "kmeans",stand =TRUE, hc_metric="eucliden",k=2)
+clust_euc$clust_plot
+fviz_silhouette(clust_euc)
+
+par(mfrow=c(2,1))
+### for k number of classes ###
+library(cluster)
+k=2 # no of clusters
+fit <- kmeans(data12_13[,c(4:6,12:21)], k) 
+names(fit)
+data12_13$k<-fit$cluster
+data12_13<-data.frame(data12_13[,-c(1:2)])
+data12_13$k<-fit$cluster
+head(data12_13)
+
+# carcateristicas de los grupos
+# Convertir la columna 'k' a factor
+data12_13$k <- as.factor(data12_13$k)
+data12_13$college<-as.factor(data12_13$college)
+data12_13$country<-as.factor(data12_13$country)
+data12_13$seasona<-as.factor(data12_13$season)
+data12_13$draft_year<-as.factor(data12_13$draft_year)
+data12_13$draft_round<-as.factor(data12_13$draft_round)
+data12_13$draft_number<-as.factor(data12_13$draft_number)
+
+# Calcular promedios para las variables numéricas por segmento
+numericas <- sapply(data12_13, is.numeric)
+promedios <- aggregate(data12_13[, numericas], 
+                       by = list(Segmento = data12_13$k), FUN = mean)
+print(promedios)
+
+# Calcular proporciones para las variables categóricas por segmento
+categoricas <- sapply(data12_13, is.factor) & names(data12_13) != "k"
+proporciones <- lapply(names(data12_13)[categoricas], function(var) {
+  prop.table(table(data12_13[[var]], data12_13$k), margin = 2)
+})
+names(proporciones) <- names(data12_13)[categoricas]
+print(proporciones)
+
+# Graficar promedios de variables numéricas por segmento
+library(ggplot2)
+library(reshape2)
+
+promedios_long <- melt(promedios, id.vars = "Segmento")
+ggplot(promedios_long, aes(x = variable, y = value, fill = Segmento)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Promedios de Variables Numéricas por Segmento", x = "Variable", y = "Promedio") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+# CA (Análisis de Correspondencia): Evaluar la asociación entre los niveles de rebotes y los niveles de puntos obtenidos.
+
+# MCA
+# Analizar la relación entre los niveles de rebotes, nivel de asistencias,
+# los niveles de puntos obtenidos, y el equipo de pertenencia.
+
+quantile(data12_13$pts)
+data12_13$nivel_pts<- cut(data12_13$pts,
+                          breaks = c(0,3.7,6.7,11.3,28.7),
+                          labels = c("low","average","high","very high"),
+                          include.lowest = TRUE)
+table(data12_13$nivel_pts)
+table(is.na(data12_13$nivel_pts))
+
+quantile(data12_13$reb)
+data12_13$nivel_reb<- cut(data12_13$reb,breaks = c(0,1.8,2.8,4.7,14.4),
+                          labels = c("muy poco","poco","regular","muchos"),
+                          include.lowest = TRUE)
+table(data12_13$nivel_reb)
+table(is.na(data12_13$nivel_reb))
+
+quantile(data12_13$ast)
+data12_13$nivel_ast<- cut(data12_13$ast,
+                          breaks = c(0,0.5,1.1,2.4,11.1),
+                          labels = c("very few","few","average","many"),
+                          include.lowest = TRUE)
+table(data12_13$nivel_ast)
+table(is.na(data12_13$nivel_ast))
+
+
+# rebotes de ataque y defensa
+
+quantile(data12_13$oreb_pct)
+data12_13$nivel_oreb<- cut(data12_13$oreb_pct,
+                           breaks = c(0,0.02,0.04,0.085,0.5),
+                           labels = c("very little","little","average","many"),
+                           include.lowest = TRUE)
+table(data12_13$nivel_oreb)
+table(is.na(data12_13$nivel_oreb))
+
+quantile(data12_13$dreb_pct)
+data12_13$nivel_dreb<- cut(data12_13$dreb_pct,
+                           breaks = c(0,0.094,0.136,0.187,0.5),
+                           labels = c("very little","little","average","many"),
+                           include.lowest = TRUE)
+table(data12_13$nivel_dreb)
+table(is.na(data12_13$nivel_dreb))
+
+quantile(data12_13$age)
+data12_13$nivel_age<- cut(data12_13$age,
+                          breaks = c(19,24,26,30,40),
+                          labels = c("muy joven","joven","adulto","adulto maduro"),
+                          include.lowest = TRUE)
+table(data12_13$nivel_age)
+table(is.na(data12_13$nivel_age))
+
+quantile(data12_13$net_rating)
+table(data12_13$net_rating>=0)
+data12_13$nivel_rating<- cut(data12_13$net_rating,
+                             breaks = c(-100.2,-6.2,-1.8,3.1,32.5),
+                             labels = c("muy bajo","bajo","normal","alto"),
+                             include.lowest = TRUE)
+table(data12_13$nivel_rating)
+table(is.na(data12_13$nivel_rating))
+
+library(FactoMineR)
+library(factoextra)
+data_mca<-data12_13[,c(23:24,25,26)]
+mca_result <- MCA(data_mca,graph = FALSE)
+summary(mca_result)
+plot.MCA(mca_result, invisible = "ind",axes = c(1, 2)) 
+plot.MCA(mca_result, invisible = "ind",axes = c(2, 3)) 
+
+# PCA
+
+library(FactoMineR)
+pca_result <- PCA(data12_13,quali.sup = c(1,5:9,20:24),
+                  ncp = 13,scale.unit = TRUE,graph = T)
+
+# Generar gráfico para las dimensiones 1 y 3
+plot.PCA(pca_result, axes = c(1, 3), choix = "var")
+plot(pca_result$eig[,1], type="o", main="Scree Plot")
+pca_result$eig
+fviz_eig(pca_result)
+fviz_eig(pca_result, addlabels = TRUE, cumulative = F, geom = "line")
+fviz_eig(pca_result, addlabels = TRUE, geom = "line",
+         choice = "eigenvalue", 
+         barfill = "skyblue", 
+         barcolor = "black",
+         linecolor = "red",
+         xlab = "Componentes principales",
+         ylab = "Valores propios",
+         main = "Gráfico de valores propios")
+
+
+# Identificar que variables se ajustan con que componente
+scores <- pca_result$ind$coord
+pca.vars<-round(cor(data12_13[,c(2:4,10:19)],scores),3)
+pca.vars<-data.frame(pca.vars[,1:4])
+pca.vars[,1:4]
+
+# Calcular el índice de la dimensión con mayor correlación en términos absolutos
+max_dim <- apply(abs(pca.vars), 1, which.max)
+max_dim
+
+# Crear un data.frame con la información de la máxima correlación
+pca.vars$Max_Dim <- max_dim
+
+# Ordenar las variables según la dimensión de mayor correlación
+pca.vars_sorted <- pca.vars[order(max_dim), ]
+pca.vars_sorted
+
+
+# Analisis discriminante
+
+quantile(data12_13$net_rating)
+data12_13$efic<-as.factor(ifelse(data12_13$net_rating>=0,"good","bad"))
+table(data12_13$efic)
+table(is.na(data12_13$efic))
+
+hist(data12_13$gp[data12_13$efic=="good"])
+hist(data12_13$gp[data12_13$efic=="bad"])
+
+hist(data12_13$gp)
+
+shapiro.test(data12_13$gp)
+shapiro.test(max(data12_13$gp)-sqrt(data12_13$gp))
+library(MASS)
+boxcox_result <- boxcox(lm(gp ~ 1, data = data12_13))
+lambda <- boxcox_result$x[which.max(boxcox_result$y)]
+lambda
+data12_13$gp_boxcox <- ((data12_13$gp^lambda) - 1) / lambda
+hist(data12_13$gp_boxcox)
+shapiro.test(data12_13$gp_boxcox)
+ks.test(data12_13$gp_boxcox,"pnorm",mean(data12_13$gp_boxcox),
+        sd(data12_13$gp_boxcox))
+
+#Verificación de normalidad
+# gp
+
+ks.test(data12_13$gp[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$gp[data12_13$efic=="good"]),
+        sd(data12_13$gp[data12_13$efic=="good"]))
+
+ks.test(data12_13$gp[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$gp[data12_13$efic=="bad"]),
+        sd(data12_13$gp[data12_13$efic=="bad"]))
+
+
+# points
+hist(data12_13$pts)
+boxcox_result <- boxcox(lm((pts+0.00001) ~ 1, data = data12_13))
+lambda <- boxcox_result$x[which.max(boxcox_result$y)]
+lambda
+data12_13$pts_boxcox <- (((data12_13$pts)^lambda) - 1) / lambda
+hist(data12_13$pts_boxcox)
+shapiro.test(data12_13$pts_boxcox)
+
+ks.test(data12_13$pts_boxcox[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$pts_boxcox[data12_13$efic=="good"]),
+        sd(data12_13$pts_boxcox[data12_13$efic=="good"]))
+
+ks.test(data12_13$pts_boxcox[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$pts_boxcox[data12_13$efic=="bad"]),
+        sd(data12_13$pts_boxcox[data12_13$efic=="bad"]))
+
+# reb
+hist(data12_13$reb)
+
+boxcox_result <- boxcox(lm((reb+0.000001) ~ 1, data = data12_13))
+lambda <- boxcox_result$x[which.max(boxcox_result$y)]
+lambda
+data12_13$reb_boxcox <- (((data12_13$reb)^lambda) - 1) / lambda
+hist(data12_13$reb_boxcox)
+shapiro.test(data12_13$reb_boxcox)
+
+ks.test(data12_13$reb_boxcox[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$reb_boxcox[data12_13$efic=="good"]),
+        sd(data12_13$reb_boxcox[data12_13$efic=="good"]))
+
+ks.test(data12_13$reb_boxcox[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$reb_boxcox[data12_13$efic=="bad"]),
+        sd(data12_13$reb_boxcox[data12_13$efic=="bad"]))
+
+# ast
+hist(data12_13$ast)
+boxcox_result <- boxcox(lm((ast+0.1) ~ 1, data = data12_13))
+lambda <- boxcox_result$x[which.max(boxcox_result$y)]
+lambda
+data12_13$ast_boxcox <- (((data12_13$ast)^lambda) - 1) / lambda
+hist(data12_13$ast_boxcox)
+shapiro.test(data12_13$ast_boxcox)
+
+data12_13$ast_boxcox <-log(data12_13$ast+0.1)
+hist(data12_13$ast_boxcox)
+
+ks.test(data12_13$ast_boxcox[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$ast_boxcox[data12_13$efic=="good"]),
+        sd(data12_13$ast_boxcox[data12_13$efic=="good"]))
+
+ks.test(data12_13$ast_boxcox[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$ast_boxcox[data12_13$efic=="bad"]),
+        sd(data12_13$ast_boxcox[data12_13$efic=="bad"]))
+
+# oreb_pct
+
+hist(data12_13$oreb_pct)
+boxcox_result <- boxcox(lm((oreb_pct+0.001) ~ 1, data = data12_13))
+lambda <- boxcox_result$x[which.max(boxcox_result$y)]
+lambda
+data12_13$oreb_pct_boxcox <- (((data12_13$oreb_pct)^lambda) - 1) / lambda
+hist(data12_13$oreb_pct_boxcox)
+shapiro.test(data12_13$oreb_pct_boxcox)
+
+ks.test(data12_13$oreb_pct_boxcox[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$oreb_pct_boxcox[data12_13$efic=="good"]),
+        sd(data12_13$oreb_pct_boxcox[data12_13$efic=="good"]))
+
+ks.test(data12_13$oreb_pct_boxcox[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$oreb_pct_boxcox[data12_13$efic=="bad"]),
+        sd(data12_13$oreb_pct_boxcox[data12_13$efic=="bad"]))
+
+# dreb_pct
+hist(data12_13$dreb_pct)
+boxcox_result <- boxcox(lm((dreb_pct+0.01) ~ 1, data = data12_13))
+lambda <- boxcox_result$x[which.max(boxcox_result$y)]
+lambda
+data12_13$dreb_pct_boxcox <- (((data12_13$dreb_pct)^lambda) - 1) / lambda
+hist(data12_13$dreb_pct_boxcox)
+shapiro.test(data12_13$dreb_pct_boxcox)
+
+
+ks.test(data12_13$dreb_pct_boxcox[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$dreb_pct_boxcox[data12_13$efic=="good"]),
+        sd(data12_13$dreb_pct_boxcox[data12_13$efic=="good"]))
+
+ks.test(data12_13$dreb_pct_boxcox[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$dreb_pct_boxcox[data12_13$efic=="bad"]),
+        sd(data12_13$dreb_pct_boxcox[data12_13$efic=="bad"]))
+
+# ts_pct
+
+hist(data12_13$ts_pct)
+boxcox_result <- boxcox(lm((ts_pct+0.00001) ~ 1, data = data12_13))
+lambda <- boxcox_result$x[which.max(boxcox_result$y)]
+lambda
+data12_13$ts_pct_boxcox <- (((data12_13$ts_pct)^lambda) - 1) / lambda
+hist(data12_13$ts_pct_boxcox)
+shapiro.test(data12_13$ts_pct_boxcox)
+data12_13$ts_pct_boxcox <- sqrt(data12_13$ts_pct)
+hist(data12_13$ts_pct_boxcox)
+shapiro.test(data12_13$ts_pct_boxcox)
+
+ks.test(data12_13$ts_pct_boxcox[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$ts_pct_boxcox[data12_13$efic=="good"]),
+        sd(data12_13$ts_pct_boxcox[data12_13$efic=="good"]))
+
+ks.test(data12_13$ts_pct_boxcox[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$ts_pct_boxcox[data12_13$efic=="bad"]),
+        sd(data12_13$ts_pct_boxcox[data12_13$efic=="bad"]))
+
+# ast_pct
+
+hist(data12_13$ast_pct)
+summary(data12_13$ast_pct)
+boxcox_result <- boxcox(lm((ast_pct+0.00001) ~ 1, data = data12_13))
+lambda <- boxcox_result$x[which.max(boxcox_result$y)]
+lambda
+data12_13$ast_pct_boxcox <- (((data12_13$ast_pct)^lambda) - 1) / lambda
+hist(data12_13$ast_pct_boxcox)
+shapiro.test(data12_13$ast_pct_boxcox)
+
+ks.test(data12_13$ast_pct_boxcox[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$ast_pct_boxcox[data12_13$efic=="good"]),
+        sd(data12_13$ast_pct_boxcox[data12_13$efic=="good"]))
+
+ks.test(data12_13$ast_pct_boxcox[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$ast_pct_boxcox[data12_13$efic=="bad"]),
+        sd(data12_13$ast_pct_boxcox[data12_13$efic=="bad"]))
+
+
+
+
+# age
+
+hist(data12_13$age)
+summary(data12_13$age)
+boxcox_result <- boxcox(lm((age) ~ 1, data = data12_13))
+lambda <- boxcox_result$x[which.max(boxcox_result$y)]
+lambda
+data12_13$age_boxocox <- (((data12_13$age)^lambda) - 1) / lambda
+hist(data12_13$age_boxocox)
+shapiro.test(data12_13$age_boxocox)
+
+ks.test(data12_13$age_boxocox[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$age_boxocox[data12_13$efic=="good"]),
+        sd(data12_13$age_boxocox[data12_13$efic=="good"]))
+
+ks.test(data12_13$age_boxocox[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$age_boxocox[data12_13$efic=="bad"]),
+        sd(data12_13$age_boxocox[data12_13$efic=="bad"]))
+
+
+# player_height
+
+hist(data12_13$player_height)
+summary(data12_13$player_height)
+boxcox_result <- boxcox(lm((player_height) ~ 1, data = data12_13))
+lambda <- boxcox_result$x[which.max(boxcox_result$y)]
+lambda
+data12_13$player_height_boxocox <- (((data12_13$player_height)^lambda) - 1) / lambda
+data12_13$player_height_boxocox <- log(data12_13$player_height)
+
+hist(data12_13$player_height_boxocox)
+shapiro.test(data12_13$player_height_boxocox)
+
+ks.test(data12_13$player_height_boxocox[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$player_height_boxocox[data12_13$efic=="good"]),
+        sd(data12_13$player_height_boxocox[data12_13$efic=="good"]))
+
+ks.test(data12_13$player_height_boxocox[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$player_height_boxocox[data12_13$efic=="bad"]),
+        sd(data12_13$player_height_boxocox[data12_13$efic=="bad"]))
+
+
+# player_weight
+
+hist(data12_13$player_weight)
+
+ks.test(data12_13$player_weight[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$player_weight[data12_13$efic=="good"]),
+        sd(data12_13$player_weight[data12_13$efic=="good"]))
+
+ks.test(data12_13$player_weight[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$player_weight[data12_13$efic=="bad"]),
+        sd(data12_13$player_weight[data12_13$efic=="bad"]))
+
+
+library(biotools)
+??boxM
+boxM(data12_13[,c(4,27:29)],data12_13$efic)
+
+library(MASS)
+
+skullda<-lda(efic~pts_boxcox+reb_boxcox+ast_boxcox, data=data12_13)
+skullda
+summary(skullda)
+skullda$prior
+names(skullda)
+
+#Predicting Groups
+?predict
+skullpred<-predict(skullda)
+names(skullpred)
+
+#Class Predictions 
+skullpred$class
+
+#Posterior Probabilities 
+skullpred$posterior
+
+#Contingency Table of Observed and Predicted Values
+tab<-table(observed=data12_13$efic,predicted=skullpred$class)
+tab
+
+#Correct Classification Rate (CCR)
+classrate<-sum(diag(tab))/sum(tab)
+classrate
+
+# Total CCR (alternative way)
+sum(diag(prop.table(tab)))
+
+#CCR across groups (over rows)
+diag(prop.table(tab, 1))
+
+#Prediction Accuracy p1^2+p^2
+pa<-skullda$prior[1]^2 + skullda$prior[2]^2
+pa
+
+#Comparison of Original and Predicted Groups
+comp<-cbind(data12_13$efic,skullpred$class)
+comp
+
+### Plot of lda results
+plot(skullda)
+
+
+library(e1071)
+nb.skull<-naiveBayes(efic~ gp+pts+reb+ast+oreb_pct+
+                       dreb_pct+usg_pct+ts_pct+ast_pct, data=data12_13)
+nb.skull
+
+nb.class <- predict (nb.skull , data12_13)
+table(nb.class, data12_13$efic)
+
+mean(nb.class==data12_13$efic)
+
+nb.preds<-predict(nb.skull,skulls, type="raw")
+nb.preds[1:10,]
+
+
+qda.fit<-qda(efic~ gp+pts+reb+ast+oreb_pct+
+               dreb_pct+usg_pct+ts_pct+ast_pct, data=data12_13)
+qda.fit
+
+qda.class <- predict (qda.fit)
+tabqda<-table(qda.class$class,data12_13$efic)
+
+sum(diag(tabqda))/sum(tabqda)
+
+
+
+# Analisis discriminante para puntos
+
+quantile(data12_13$pts)
+data12_13$nivel_pts<- cut(data12_13$pts,
+                          breaks = c(0,3.7,6.7,11.3,28.7),
+                          labels = c("low","average","high","very high"),
+                          include.lowest = TRUE)
+table(data12_13$nivel_pts)
+table(is.na(data12_13$nivel_pts))
+
+# gp
+ks.test(data12_13$gp[data12_13$nivel_pts=="low"],
+        "pnorm",
+        mean(data12_13$gp[data12_13$nivel_pts=="low"]),
+        sd(data12_13$gp[data12_13$nivel_pts=="low"]))
+
+ks.test(data12_13$gp[data12_13$nivel_pts=="average"],
+        "pnorm",
+        mean(data12_13$gp[data12_13$nivel_pts=="average"]),
+        sd(data12_13$gp[data12_13$nivel_pts=="average"]))
+
+ks.test(data12_13$gp[data12_13$nivel_pts=="high"],
+        "pnorm",
+        mean(data12_13$gp[data12_13$nivel_pts=="high"]),
+        sd(data12_13$gp[data12_13$nivel_pts=="high"]))
+
+ks.test(data12_13$gp[data12_13$nivel_pts=="very high"],
+        "pnorm",
+        mean(data12_13$gp[data12_13$nivel_pts=="very high"]),
+        sd(data12_13$gp[data12_13$nivel_pts=="very high"]))
+
+# reb
+
+ks.test(data12_13$reb[data12_13$nivel_pts=="low"],
+        "pnorm",
+        mean(data12_13$reb[data12_13$nivel_pts=="low"]),
+        sd(data12_13$reb[data12_13$nivel_pts=="low"]))
+
+ks.test(data12_13$reb[data12_13$nivel_pts=="average"],
+        "pnorm",
+        mean(data12_13$reb[data12_13$nivel_pts=="average"]),
+        sd(data12_13$reb[data12_13$nivel_pts=="average"]))
+
+ks.test(data12_13$reb[data12_13$nivel_pts=="high"],
+        "pnorm",
+        mean(data12_13$reb[data12_13$nivel_pts=="high"]),
+        sd(data12_13$reb[data12_13$nivel_pts=="high"]))
+
+ks.test(data12_13$reb[data12_13$nivel_pts=="very high"],
+        "pnorm",
+        mean(data12_13$reb[data12_13$nivel_pts=="very high"]),
+        sd(data12_13$reb[data12_13$nivel_pts=="very high"]))
+
+
+quantile(data12_13$usg_pct)
+data12_13$efic<-as.factor(ifelse(data12_13$usg_pct>0.187,"good","bad"))
+table(data12_13$efic)
+table(is.na(data12_13$efic))
+
+#Verificación de normalidad
+tapply(data12_13$gp, data12_13$draft_number,shapiro.test)
+
+# gp
+ks.test(data12_13$gp[data12_13$draft_round=="1"],
+        "pnorm",
+        mean(data12_13$gp[data12_13$draft_round=="1"]),
+        sd(data12_13$gp[data12_13$draft_round=="1"]))
+
+# gp
+ks.test(data12_13$gp[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$gp[data12_13$efic=="good"]),
+        sd(data12_13$gp[data12_13$efic=="good"]))
+
+ks.test(data12_13$gp[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$gp[data12_13$efic=="bad"]),
+        sd(data12_13$gp[data12_13$efic=="bad"]))
+
+# points
+ks.test(data12_13$pts[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$pts[data12_13$efic=="good"]),
+        sd(data12_13$pts[data12_13$efic=="good"]))
+
+ks.test(data12_13$pts[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$pts[data12_13$efic=="bad"]),
+        sd(data12_13$pts[data12_13$efic=="bad"]))
+
+# reb
+
+ks.test(data12_13$reb[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$reb[data12_13$efic=="good"]),
+        sd(data12_13$reb[data12_13$efic=="good"]))
+
+ks.test(data12_13$reb[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$reb[data12_13$efic=="bad"]),
+        sd(data12_13$reb[data12_13$efic=="bad"]))
+# ast
+
+ks.test(data12_13$ast[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$ast[data12_13$efic=="good"]),
+        sd(data12_13$ast[data12_13$efic=="good"]))
+
+ks.test(data12_13$ast[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$ast[data12_13$efic=="bad"]),
+        sd(data12_13$ast[data12_13$efic=="bad"]))
+# oreb_pct
+
+ks.test(data12_13$oreb_pct[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$oreb_pct[data12_13$efic=="good"]),
+        sd(data12_13$oreb_pct[data12_13$efic=="good"]))
+
+ks.test(data12_13$oreb_pct[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$oreb_pct[data12_13$efic=="bad"]),
+        sd(data12_13$oreb_pct[data12_13$efic=="bad"]))
+# dreb_pct
+
+ks.test(data12_13$dreb_pct[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$dreb_pct[data12_13$efic=="good"]),
+        sd(data12_13$dreb_pct[data12_13$efic=="good"]))
+
+ks.test(data12_13$dreb_pct[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$dreb_pct[data12_13$efic=="bad"]),
+        sd(data12_13$dreb_pct[data12_13$efic=="bad"]))
+
+# ts_pct
+ks.test(data12_13$ts_pct[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$ts_pct[data12_13$efic=="good"]),
+        sd(data12_13$ts_pct[data12_13$efic=="good"]))
+
+ks.test(data12_13$ts_pct[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$ts_pct[data12_13$efic=="bad"]),
+        sd(data12_13$ts_pct[data12_13$efic=="bad"]))
+
+# ast_pct
+
+ks.test(data12_13$ast_pct[data12_13$efic=="good"],
+        "pnorm",
+        mean(data12_13$ast_pct[data12_13$efic=="good"]),
+        sd(data12_13$ast_pct[data12_13$efic=="good"]))
+
+ks.test(data12_13$ast_pct[data12_13$efic=="bad"],
+        "pnorm",
+        mean(data12_13$ast_pct[data12_13$efic=="bad"]),
+        sd(data12_13$ast_pct[data12_13$efic=="bad"]))
+
+library(biotools)
+??boxM
+boxM(data12_13[,10:19],data12_13$efic)
+
+library(MASS)
+
+skullda<-lda(efic~ gp+pts+reb+ast+oreb_pct+
+               dreb_pct+usg_pct+ts_pct+ast_pct, data=data12_13)
+skullda
+
+skullda$prior
+names(skullda)
+
+#Predicting Groups
+?predict
+skullpred<-predict(skullda)
+names(skullpred)
+
+#Class Predictions 
+skullpred$class
+
+#Posterior Probabilities 
+skullpred$posterior
+
+#Contingency Table of Observed and Predicted Values
+tab<-table(data12_13$efic,skullpred$class)
+tab
+
+#Correct Classification Rate (CCR)
+classrate<-sum(diag(tab))/sum(tab)
+classrate
+
+# Total CCR (alternative way)
+sum(diag(prop.table(tab)))
+
+#CCR across groups (over rows)
+diag(prop.table(tab, 1))
+
+#Prediction Accuracy p1^2+p^2
+pa<-skullda$prior[1]^2 + skullda$prior[2]^2
+pa
+
+#Comparison of Original and Predicted Groups
+comp<-cbind(data12_13$efic,skullpred$class)
+comp
+
+### Plot of lda results
+plot(skullda)
+
+
+library(e1071)
+nb.skull<-naiveBayes(efic~ gp+pts+reb+ast+oreb_pct+
+                       dreb_pct+usg_pct+ts_pct+ast_pct, data=data12_13)
+nb.skull
+
+nb.class <- predict (nb.skull , data12_13)
+table(nb.class, data12_13$efic)
+
+mean(nb.class==data12_13$efic)
+
+nb.preds<-predict(nb.skull,skulls, type="raw")
+nb.preds[1:10,]
+
+
+qda.fit<-qda(efic~ gp+pts+reb+ast+oreb_pct+
+               dreb_pct+usg_pct+ts_pct+ast_pct, data=data12_13)
+qda.fit
+
+qda.class <- predict (qda.fit)
+tabqda<-table(qda.class$class,data12_13$efic)
+
+sum(diag(tabqda))/sum(tabqda)
+
